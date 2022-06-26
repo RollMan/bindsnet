@@ -476,7 +476,6 @@ class PostPre(LearningRule):
             pre = self.reduction(
                 torch.bmm(target_x, source_s.permute((0, 2, 1))), dim=0
             )
-            print(self.nu[0].shape, self.connection.w.size())
             self.connection.w -= self.nu[0] * pre.view(self.connection.w.size())
 
         # Post-synaptic update.
