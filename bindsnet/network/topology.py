@@ -860,7 +860,7 @@ class MaxPool2dConnection(AbstractConnection):
         self.padding = _pair(padding)
         self.dilation = _pair(dilation)
 
-        self.register_buffer("firing_rates", torch.zeros(*source.shape))
+        self.register_buffer("firing_rates", torch.zeros(1, *source.shape))
 
     def compute(self, s: torch.Tensor) -> torch.Tensor:
         # language=rst
