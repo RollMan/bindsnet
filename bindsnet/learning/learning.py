@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 
 from bindsnet.utils import im2col_indices
+
 from ..network.nodes import SRM0Nodes
 from ..network.topology import (
     AbstractConnection,

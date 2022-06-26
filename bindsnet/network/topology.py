@@ -4,7 +4,6 @@ from typing import Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 import torch.nn.functional as F
-from bindsnet.utils import im2col_indices
 from torch.nn import Module, Parameter
 from torch.nn.modules.utils import _pair, _triple
 
@@ -773,7 +772,7 @@ class MaxPool1dConnection(AbstractConnection):
         self.padding = padding
         self.dilation = dilation
 
-        self.register_buffer("firing_rates", torch.zeros(source.s.shape))
+        self.register_buffer("firing_rates", torch.zeros(source.shape))
 
     def compute(self, s: torch.Tensor) -> torch.Tensor:
         # language=rst
@@ -819,9 +818,7 @@ class MaxPool1dConnection(AbstractConnection):
         """
         super().reset_state_variables()
 
-        self.firing_rates = torch.zeros(
-            self.source.batch_size, *(self.source.s.shape[1:])
-        )
+        self.firing_rates = torch.zeros(self.source.batch_size, *(self.source.shape))
 
 
 class MaxPool2dConnection(AbstractConnection):
@@ -863,7 +860,7 @@ class MaxPool2dConnection(AbstractConnection):
         self.padding = _pair(padding)
         self.dilation = _pair(dilation)
 
-        self.register_buffer("firing_rates", torch.zeros(source.s.shape))
+        self.register_buffer("firing_rates", torch.zeros(source.shape))
 
     def compute(self, s: torch.Tensor) -> torch.Tensor:
         # language=rst
@@ -909,9 +906,7 @@ class MaxPool2dConnection(AbstractConnection):
         """
         super().reset_state_variables()
 
-        self.firing_rates = torch.zeros(
-            self.source.batch_size, *(self.source.s.shape[1:])
-        )
+        self.firing_rates = torch.zeros(self.source.batch_size, *(self.source.shape))
 
 
 class MaxPoo3dConnection(AbstractConnection):
@@ -953,7 +948,7 @@ class MaxPoo3dConnection(AbstractConnection):
         self.padding = _triple(padding)
         self.dilation = _triple(dilation)
 
-        self.register_buffer("firing_rates", torch.zeros(source.s.shape))
+        self.register_buffer("firing_rates", torch.zeros(source.shape))
 
     def compute(self, s: torch.Tensor) -> torch.Tensor:
         # language=rst
@@ -999,9 +994,7 @@ class MaxPoo3dConnection(AbstractConnection):
         """
         super().reset_state_variables()
 
-        self.firing_rates = torch.zeros(
-            self.source.batch_size, *(self.source.s.shape[1:])
-        )
+        self.firing_rates = torch.zeros(self.source.batch_size, *(self.source.shape))
 
 
 class LocalConnection(AbstractConnection):
