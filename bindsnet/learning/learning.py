@@ -83,7 +83,7 @@ class LearningRule(ABC):
             self.reduction = reduction
 
         # Weight decay.
-        self.weight_decay = 1.0 - weight_decay if weight_decay else 1.0
+        self.weight_decay = 1.0 - weight_decay if weight_decay else None
 
     def update(self) -> None:
         # language=rst
