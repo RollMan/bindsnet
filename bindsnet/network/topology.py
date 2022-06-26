@@ -873,7 +873,7 @@ class MaxPool2dConnection(AbstractConnection):
             decaying spike activation).
         """
         self.firing_rates -= self.decay * self.firing_rates
-        self.firing_rates += s.float().squeeze()
+        self.firing_rates += s.float()
 
         _, indices = F.max_pool2d(
             self.firing_rates,
