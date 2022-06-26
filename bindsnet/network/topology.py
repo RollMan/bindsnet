@@ -872,6 +872,7 @@ class MaxPool2dConnection(AbstractConnection):
         :return: Incoming spikes multiplied by synaptic weights (with or without
             decaying spike activation).
         """
+        self.firing_rates = self.firing_rates.to(s.device)
         self.firing_rates -= self.decay * self.firing_rates
         self.firing_rates += s.float()
 
