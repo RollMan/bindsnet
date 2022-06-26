@@ -853,7 +853,7 @@ class MaxPool2dConnection(AbstractConnection):
 
         :param decay: Decay rate of online estimates of average firing activity.
         """
-        super().__init__(source, target, None, None, 0.0, **kwargs)
+        super().__init__(source, target, None, None, None, **kwargs)
 
         self.kernel_size = _pair(kernel_size)
         self.stride = _pair(stride)
