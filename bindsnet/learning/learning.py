@@ -2933,3 +2933,104 @@ class Rmax(LearningRule):
         self.connection.w += self.nu[0] * reward * self.eligibility_trace
 
         super().update()
+
+
+class RLSTDP(LearningRule):
+    # language=rst
+    """
+    RLSTDP proposed by Tavanaei in 2018. Implementation is based on https://adaptive.u-aizu.ac.jp/gitlab/yshimmyo/Spiking-CNN (internal page) and https://github.com/tavanaei/Spiking-CNN.
+    """
+
+    def __init__(
+        self,
+        connection: AbstractConnection,
+        nu: Optional[float] = None,
+        reduction: Optional[callable] = None,
+        weight_decay: float = 0.0,
+        **kwargs,
+    ) -> None:
+        # language=rst
+        """
+        Constructor for ``PostPre`` learning rule.
+
+        :param connection: An ``AbstractConnection`` object whose weights the
+            ``PostPre`` learning rule will modify.
+        :param nu: Single or pair of learning rates for pre- and post-synaptic events. It also
+            accepts a pair of tensors to individualize learning rates of each neuron.
+            In this case, their shape should be the same size as the connection weights.
+        :param reduction: Method for reducing parameter updates along the batch
+            dimension.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
+        """
+        super().__init__(
+            connection=connection,
+            nu=nu,
+            reduction=reduction,
+            weight_decay=weight_decay,
+            **kwargs,
+        )
+
+        self.nu = self.nu[0]
+
+        if isinstance(connection, (Connection, LocalConnection)):
+            self.update = self._connection_update
+        elif isinstance(connection, Conv2dConnection):
+            self.update = self._conv2d_connection_update
+        else:
+            raise NotImplementedError(
+                "This learning rule is not supported for this Connection type."
+            )
+
+    def _connection_update(self, **kwargs) -> None:
+        # language=rst
+        """
+        Post-pre learning rule for ``Connection`` subclass of ``AbstractConnection``
+        class.
+        """
+        batch_size = self.source.batch_size
+
+        source_s = self.source.s.view(batch_size, -1).unsqueeze(
+            2
+        ).float() - self.connection.w.unsqueeze(0)
+        target_s = self.target.s.view(batch_size, -1).unsqueeze(1).float()
+        delta_w = self.reduction(source_s * target_s, dim=0)
+        self.connection.w += self.nu * delta_w
+
+        super().update()
+
+    def _conv2d_connection_update(self, **kwargs) -> None:
+        # language=rst
+        """
+        Post-pre learning rule for ``Conv2dConnection`` subclass of
+        ``AbstractConnection`` class.
+        """
+        # Get convolutional layer parameters.
+        out_channels, _, kernel_height, kernel_width = self.connection.w.size()
+        padding, stride = self.connection.padding, self.connection.stride
+        batch_size = self.source.batch_size
+
+        # Reshaping spike traces and spike occurrences.
+        source_x = im2col_indices(
+            self.source.x, kernel_height, kernel_width, padding=padding, stride=stride
+        )
+        target_x = self.target.x.view(batch_size, out_channels, -1)
+        source_s = im2col_indices(
+            self.source.s.float(),
+            kernel_height,
+            kernel_width,
+            padding=padding,
+            stride=stride,
+        )
+
+        target_s = self.target.s.view(batch_size, out_channels, -1).float()
+
+        source_s = source_s.unsqueeze(1)
+        w = self.connection.w.reshape(out_channels, -1).unsqueeze(0).unsqueeze(3)
+        source_modulated = source_s - w
+
+        target_s = target_s.unsqueeze(3)
+
+        delta_w = self.reduction(torch.matmul(source_modulated, target_s), axis=0)
+        self.connection.w += self.nu * delta_w.view(self.connection.w.size())
+
+        super().update()
