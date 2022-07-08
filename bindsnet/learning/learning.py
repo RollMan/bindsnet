@@ -2970,6 +2970,8 @@ class RLSTDP(LearningRule):
             **kwargs,
         )
 
+        self.nu = self.nu[0]
+
         if isinstance(connection, (Connection, LocalConnection)):
             self.update = self._connection_update
         elif isinstance(connection, Conv2dConnection):
@@ -3019,20 +3021,16 @@ class RLSTDP(LearningRule):
             padding=padding,
             stride=stride,
         )
+
         target_s = self.target.s.view(batch_size, out_channels, -1).float()
 
-        # Pre-synaptic update.
-        if self.nu[0].any():
-            pre = self.reduction(
-                torch.bmm(target_x, source_s.permute((0, 2, 1))), dim=0
-            )
-            self.connection.w -= self.nu[0] * pre.view(self.connection.w.size())
+        source_s = source_s.unsqueeze(1)
+        w = self.connection.w.reshape(out_channels, -1).unsqueeze(0).unsqueeze(3)
+        source_modulated = source_s - w
 
-        # Post-synaptic update.
-        if self.nu[1].any():
-            post = self.reduction(
-                torch.bmm(target_s, source_x.permute((0, 2, 1))), dim=0
-            )
-            self.connection.w += self.nu[1] * post.view(self.connection.w.size())
+        target_s = target_s.unsqueeze(3)
+
+        delta_w = self.reduction(torch.matmul(source_modulated, target_s), axis=0)
+        self.connection.w += self.nu * delta_w.view(self.connection.w.size())
 
         super().update()
