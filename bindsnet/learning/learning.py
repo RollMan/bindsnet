@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 
 from bindsnet.utils import im2col_indices
+
 from ..network.nodes import SRM0Nodes
 from ..network.topology import (
     AbstractConnection,
@@ -82,7 +83,7 @@ class LearningRule(ABC):
             self.reduction = reduction
 
         # Weight decay.
-        self.weight_decay = 1.0 - weight_decay if weight_decay else 1.0
+        self.weight_decay = 1.0 - weight_decay if weight_decay else None
 
     def update(self) -> None:
         # language=rst
@@ -475,7 +476,6 @@ class PostPre(LearningRule):
             pre = self.reduction(
                 torch.bmm(target_x, source_s.permute((0, 2, 1))), dim=0
             )
-            print(self.nu[0].shape, self.connection.w.size())
             self.connection.w -= self.nu[0] * pre.view(self.connection.w.size())
 
         # Post-synaptic update.
